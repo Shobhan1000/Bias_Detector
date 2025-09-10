@@ -13,9 +13,9 @@ export default function App() {
     if (!text.trim()) return;
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("http://localhost:8000/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
       });
       const data = await res.json();
@@ -30,9 +30,9 @@ export default function App() {
     if (!url.trim()) return;
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/analyze-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("http://localhost:8000/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
       });
       const data = await res.json();
@@ -53,18 +53,23 @@ export default function App() {
     link.click();
   };
 
-  const getLabelColor = (label) => {
-    if (label.includes('left')) return 'bg-blue-800 text-blue-100';
-    if (label.includes('right')) return 'bg-red-800 text-red-100';
-    if (label.includes('loaded')) return 'bg-yellow-800 text-yellow-100';
-    return 'bg-green-800 text-green-100';
-  };
+  function getLabelColor(label) {
+    if (!label) return "gray"; // default color for undefined/null
+
+    if (label.includes("biased")) return "red";
+    if (label.includes("neutral")) return "green";
+    return "blue"; // fallback color
+  }
 
   const getSentimentIcon = (sentiment) => {
+    if (!sentiment || typeof sentiment !== "string") return "😐"; // default
     switch (sentiment.toLowerCase()) {
-      case 'positive': return '👍';
-      case 'negative': return '👎';
-      default: return '😐';
+      case "positive":
+        return "👍";
+      case "negative":
+        return "👎";
+      default:
+        return "😐";
     }
   };
 
@@ -183,25 +188,37 @@ export default function App() {
         {/* Analysis Results */}
         {filteredAnalysis.length > 0 && (
           <div className="mt-8 grid gap-6">
-            {filteredAnalysis.map((a, i) => (
-              <div key={i} className="p-5 bg-gray-900 border border-gray-700 rounded-2xl shadow-lg flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-                <p className="flex-1">{a.sentence}</p>
-                <div className="flex flex-wrap gap-3 items-center mt-2 md:mt-0">
-                  <span className={`px-4 py-1 rounded-full text-sm font-semibold ${getLabelColor(a.bias_label)}`}>
-                    {a.bias_label}
-                  </span>
-                  <span className="px-4 py-1 rounded-full text-sm flex items-center gap-2 bg-gray-700 text-gray-200">
-                    {getSentimentIcon(a.sentiment)} {a.sentiment}
-                  </span>
-                  <button
-                    onClick={() => copySentence(a.sentence)}
-                    className="px-3 py-1 rounded-full bg-pink-600 hover:bg-pink-700 text-white text-sm transition"
-                  >
-                    Copy
-                  </button>
+            {filteredAnalysis.map((a, i) => {
+              const sentence = a?.sentence || "N/A";
+              const biasLabel = a?.bias_label || "Unknown";
+              const sentiment = a?.sentiment || "unknown";
+              const color = getLabelColor(biasLabel);
+
+              return (
+                <div
+                  key={i}
+                  className="p-5 bg-gray-900 border border-gray-700 rounded-2xl shadow-lg flex flex-col md:flex-row md:justify-between md:items-center gap-3"
+                >
+                  <p className="flex-1">{sentence}</p>
+                  <div className="flex flex-wrap gap-3 items-center mt-2 md:mt-0">
+                    <span
+                      className={`px-4 py-1 rounded-full text-sm font-semibold ${color}`}
+                    >
+                      {biasLabel}
+                    </span>
+                    <span className="px-4 py-1 rounded-full text-sm flex items-center gap-2 bg-gray-700 text-gray-200">
+                      {getSentimentIcon(sentiment)} {sentiment}
+                    </span>
+                    <button
+                      onClick={() => copySentence(sentence)}
+                      className="px-3 py-1 rounded-full bg-pink-600 hover:bg-pink-700 text-white text-sm transition"
+                    >
+                      Copy
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

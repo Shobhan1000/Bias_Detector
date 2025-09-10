@@ -9,6 +9,20 @@ from utils.preprocess import split_sentences, clean_text
 
 app = FastAPI(title="Bias Detector API")
 
+from fastapi.middleware.cors import CORSMiddleware
+
+origins = [
+    "http://localhost:5173",  # your frontend
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # allow frontend origin
+    allow_credentials=True,
+    allow_methods=["*"],    # allow all HTTP methods
+    allow_headers=["*"],    # allow all headers
+)
+
 sentiment = SentimentAnalyzer()
 bias_clf = BiasClassifier()
 
