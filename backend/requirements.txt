@@ -1,0 +1,22 @@
+# Core
+fastapi
+uvicorn
+pydantic
+requests
+beautifulsoup4
+
+# Machine Learning / NLP
+transformers
+torch
+
+# Audio transcription
+openai-whisper
+SpeechRecognition
+pydub
+
+# Video (YouTube, etc.)
+yt-dlp
+
+# Testing
+pytest
+httpx
