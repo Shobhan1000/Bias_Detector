@@ -1,48 +1,57 @@
-try:
-    from transformers import pipeline
-    HAS_TRANSFORMERS = True
-except Exception:
-    HAS_TRANSFORMERS = False
-
+from transformers import pipeline
 
 class BiasClassifier:
     def __init__(self):
-        self.labels = ["neutral", "left-leaning bias", "right-leaning bias", "loaded language"]
-        if HAS_TRANSFORMERS:
-            try:
-                self.pipe = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
-            except Exception:
-                self.pipe = None
-        else:
+        """
+        Improved bias classifier for formal/news text.
+        Combines a transformer model with heuristic rules.
+        """
+        try:
+            # Model fine-tuned for zero-shot classification
+            self.pipe = pipeline(
+                "zero-shot-classification",
+                model="facebook/bart-large-mnli"
+            )
+        except Exception:
             self.pipe = None
 
-        # Fallback keywords
-        self.left_words = {"progressive", "social justice", "climate crisis", "inequality", "regressive"}
-        self.right_words = {"freedom", "tax cuts", "border", "illegal immigrants", "traditional"}
-        self.loaded_words = {"disaster", "crisis", "catastrophic", "radical", "extremist"}
+        # Expanded heuristic phrases for bias detection
+        self.bias_phrases = {
+            "less committed", "avoiding responsibilities", "can't possibly contribute",
+            "inferior", "lazy", "weak", "worthless", "not serious",
+            "clearly better", "everyone knows", "never contributes",
+            "historically", "always", "never", "clearly superior",
+            "undeserving", "privileged", "biased", "discriminatory",
+            "unfair", "favoring", "prejudice", "stereotype"
+        }
 
-    def classify(self, text):
+    def classify(self, text: str) -> str:
+        """
+        Classify a single sentence for bias.
+        Returns: 'general bias' or 'neutral'
+        """
         text = text.strip()
         if not text:
-            return {"label": "neutral", "score": 0.0}
+            return "neutral"
 
+        t = text.lower()
+
+        # Heuristic check first (faster)
+        if any(p in t for p in self.bias_phrases):
+            return "general bias"
+
+        # Model-based zero-shot classification
         if self.pipe:
             try:
-                out = self.pipe(text[:512], candidate_labels=self.labels)
-                return {"label": out["labels"][0], "scores": [float(x) for x in out["scores"]]}
+                out = self.pipe(
+                    text[:512],
+                    candidate_labels=["biased", "neutral"]
+                )
+                label = out.get("labels", ["neutral"])[0].lower()
+                score = out.get("scores", [0])[0]
+                if label == "biased" and score > 0.55:  # confidence threshold
+                    return "general bias"
             except Exception:
                 pass
 
-        # Heuristic fallback
-        t = text.lower()
-        l = sum(t.count(w) for w in self.left_words)
-        r = sum(t.count(w) for w in self.right_words)
-        loaded = sum(t.count(w) for w in self.loaded_words)
-
-        if loaded > 0:
-            return {"label": "loaded language", "score": float(loaded)}
-        if l > r:
-            return {"label": "left-leaning bias", "score": float(l)}
-        if r > l:
-            return {"label": "right-leaning bias", "score": float(r)}
-        return {"label": "neutral", "score": 0.0}
+        return "neutral"
