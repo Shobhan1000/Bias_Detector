@@ -94,18 +94,18 @@ export default function App() {
     setLoading(true);
     setError(null);
 
-    const sentences = splitSentences(text);
-
     try {
       const res = await fetch(`${API_BASE}/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sentences }), // send array of sentences
+        body: JSON.stringify({ text }), // send the text as expected by FastAPI
       });
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.detail || `Request failed: ${res.status}`);
       }
+
       const data = await res.json();
       setAnalysis(data.analysis || []);
     } catch (err) {
